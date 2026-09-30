@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB Matching & Classification Game</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Tahoma,sans-serif;background:#fff7f0;color:#493d45;min-height:100vh}
+.wrap{max-width:1100px;margin:auto;padding:24px}
+header{text-align:center;margin-bottom:20px}
+h1{margin:5px 0;font-size:clamp(25px,5vw,40px);color:#70485e}
+.subtitle{color:#8a737e}
+.info{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0}
+.pill{background:#fff;border:2px solid #f1dfe5;border-radius:999px;padding:8px 15px;font-weight:700}
+.progress{height:12px;background:#eadfe3;border-radius:99px;overflow:hidden;margin:18px 0}
+.bar{height:100%;width:0;background:#d98ca8;transition:.35s}
+.layout{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}
+.panel{background:#fff;border:2px solid #f1e1e6;border-radius:22px;padding:20px;box-shadow:0 8px 25px #7c536d12}
+.panel h2{font-size:19px;margin-top:0;color:#70485e}
+.items{display:grid;gap:11px}
+.item{background:#fff8fa;border:2px solid #edd7df;border-radius:15px;padding:13px;cursor:grab;user-select:none;font-weight:700;transition:.2s}
+.item:hover{transform:translateY(-2px);border-color:#d98ca8}
+.item.dragging{opacity:.45}
+.item.done{opacity:.45;cursor:default;text-decoration:line-through}
+.categories{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.category{min-height:190px;border:2px dashed #d9b9c6;border-radius:19px;padding:15px;background:#fffdfd;transition:.2s}
+.category.over{background:#fff1f5;border-color:#d98ca8;transform:scale(1.01)}
+.cat-title{font-weight:900;color:#70485e;margin-bottom:10px}
+.cat-desc{font-size:13px;color:#927e87;margin-bottom:10px}
+.drop-items{display:flex;flex-wrap:wrap;gap:7px}
+.tag{background:#f8e2e9;border-radius:10px;padding:7px 9px;font-size:13px}
+.feedback{margin-top:18px;padding:14px;border-radius:15px;display:none;font-weight:800}
+.feedback.show{display:block}
+.controls{text-align:center;margin-top:20px}
+button{border:0;border-radius:14px;padding:13px 25px;font-size:16px;font-weight:800;cursor:pointer;background:#d98ca8;color:white}
+button.secondary{background:#fff;color:#70485e;border:2px solid #ead4dc}
+.summary{text-align:center}
+.score{font-size:58px;font-weight:900;color:#c46e91}
+.hidden{display:none}
+@media(max-width:750px){.layout{grid-template-columns:1fr}.categories{grid-template-columns:1fr}.category{min-height:130px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div style="font-size:42px">🧩🔧</div>
+  <h1>PCB Matching & Classification</h1>
+  <div class="subtitle">จับคู่ Item เข้ากับ Category ให้ถูกต้อง</div>
+  <div class="info">
+    <div class="pill">🎯 คะแนน: <span id="score">0</span></div>
+    <div class="pill">⭐ โบนัส: <span id="bonus">0</span></div>
+    <div class="pill">📦 จับคู่แล้ว: <span id="done">0</span>/12</div>
+  </div>
+</header>
+
+<div id="game">
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="layout">
+<section class="panel">
+<h2>📦 Item — ลากไปยังหมวดที่ถูกต้อง</h2>
+<div class="items" id="items"></div>
+</section>
+<section class="panel">
+<h2>🗂️ Category — พื้นที่จัดหมวดหมู่</h2>
+<div class="categories" id="categories"></div>
+</section>
+</div>
+<div class="feedback" id="feedback"></div>
+<div class="controls"><button class="secondary" onclick="resetGame()">🔄 เริ่มใหม่</button></div>
+</div>
+
+<div id="summary" class="panel summary hidden">
+<div style="font-size:55px">🎉</div>
+<h2>สรุปผลการเล่น</h2>
+<div class="score" id="final">0</div>
+<p id="result"></p>
+<p>จับคู่ถูก <b id="finalDone">0</b> / 12 รายการ</p>
+<p>โบนัส <b id="finalBonus">0</b> คะแนน</p>
+<button onclick="resetGame()">🔄 เล่นอีกครั้ง</button>
+</div>
+</div>
+
+<script>
+const data={
+"Component Placement":{
+desc:"การวางตำแหน่งและทิศทางของอุปกรณ์บน PCB",
+items:["จัดกลุ่มอุปกรณ์","จัดทิศทางอุปกรณ์","Input Connector","IC1"]
+},
+"Manual Routing":{
+desc:"การกำหนดเส้นทางลายวงจรด้วยตนเอง",
+items:["เดิน Trace ด้วยตนเอง","เส้นทางสั้นและเป็นระบบ","หลีกเลี่ยง Trace ตัดกัน","วางแผนเส้นทาง"]
+},
+"Design Rules":{
+desc:"กฎและข้อกำหนดที่ควบคุมการออกแบบ PCB",
+items:["Trace Width","ขนาดรูเจาะ","ขนาดพื้นที่ PCB","ระยะห่างระหว่างอุปกรณ์"]
+},
+"Clearance":{
+desc:"ระยะห่างระหว่างส่วนต่าง ๆ ของ PCB",
+items:["ระยะห่างระหว่าง Trace","Trace A กับ Trace B","ไม่วาง Trace ใกล้เกินข้อกำหนด","ตรวจระยะห่าง"]
+}
+};
+
+let items=[],score=0,bonus=0,matched=0;
+Object.entries(data).forEach(([cat,v])=>v.items.forEach(x=>items.push({text:x,cat})));
+
+function shuffle(a){return a.sort(()=>Math.random()-.5)}
+function resetGame(){
+ score=0;bonus=0;matched=0;
+ document.getElementById("game").classList.remove("hidden");
+ document.getElementById("summary").classList.add("hidden");
+ render();
+}
+function render(){
+ const itemBox=document.getElementById("items"),catBox=document.getElementById("categories");
+ itemBox.innerHTML="";catBox.innerHTML="";
+ shuffle([...items]).forEach((x,i)=>{
+  const el=document.createElement("div");
+  el.className="item";el.draggable=true;el.textContent="🔹 "+x.text;el.dataset.cat=x.cat;
+  el.addEventListener("dragstart",e=>{el.classList.add("dragging");e.dataTransfer.setData("text/plain",x.text)});
+  el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+  itemBox.appendChild(el);
+ });
+ Object.entries(data).forEach(([cat,v])=>{
+  const box=document.createElement("div");box.className="category";box.dataset.cat=cat;
+  box.innerHTML=`<div class="cat-title">📁 ${cat}</div><div class="cat-desc">${v.desc}</div><div class="drop-items"></div>`;
+  box.addEventListener("dragover",e=>{e.preventDefault();box.classList.add("over")});
+  box.addEventListener("dragleave",()=>box.classList.remove("over"));
+  box.addEventListener("drop",e=>drop(e,box));
+  catBox.appendChild(box);
+ });
+ update();
+}
+function drop(e,box){
+ e.preventDefault();box.classList.remove("over");
+ const text=e.dataTransfer.getData("text/plain");
+ const el=[...document.querySelectorAll(".item")].find(x=>x.textContent.includes(text)&&!x.classList.contains("done"));
+ if(!el)return;
+ const correct=el.dataset.cat===box.dataset.cat;
+ const fb=document.getElementById("feedback");
+ fb.classList.add("show");
+ if(correct){
+  score+=10;bonus+=5;matched++;
+  el.classList.add("done");
+  const tag=document.createElement("span");tag.className="tag";tag.textContent="✓ "+text;
+  box.querySelector(".drop-items").appendChild(tag);
+  fb.textContent="✅ ถูกต้อง! +10 คะแนน และโบนัส +5";
+  fb.style.background="#edf9f0";fb.style.color="#32734b";
+ }else{
+  fb.textContent="💡 ยังไม่ใช่หมวดนี้ ลองวิเคราะห์หน้าที่ของ Item แล้วลากใหม่";
+  fb.style.background="#fff5e8";fb.style.color="#8a6030";
+ }
+ update();
+ if(matched===items.length)setTimeout(showSummary,450);
+}
+function update(){
+ document.getElementById("score").textContent=score;
+ document.getElementById("bonus").textContent=bonus;
+ document.getElementById("done").textContent=matched;
+ document.getElementById("bar").style.width=(matched/items.length*100)+"%";
+}
+function showSummary(){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("summary").classList.remove("hidden");
+ document.getElementById("final").textContent=score+bonus;
+ document.getElementById("finalDone").textContent=matched;
+ document.getElementById("finalBonus").textContent=bonus;
+ document.getElementById("result").textContent="เก่งมาก! คุณสามารถจำแนกองค์ประกอบของงาน PCB Layout ได้ครบแล้ว 🎊";
+}
+resetGame();
+</script>
+</body>
+</html>

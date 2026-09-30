@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB Layout Mission Escape</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#071426;color:#eef6ff}
+.container{max-width:1050px;margin:auto;padding:24px}
+header{background:linear-gradient(135deg,#0d2745,#102f50);border:1px solid #244a70;border-radius:20px;padding:24px;margin-bottom:18px}
+h1{margin:0 0 8px;color:#ff9f43}
+.subtitle{color:#b8cde0}
+.status{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.badge{background:#0a1d32;border:1px solid #315577;border-radius:10px;padding:8px 12px}
+.card{background:#0b1c30;border:1px solid #274967;border-radius:18px;padding:22px}
+.hidden{display:none}
+.level{color:#ff9f43;font-weight:bold}
+h2{margin-top:6px}
+.challenge{font-size:18px;line-height:1.7}
+.options{display:grid;gap:10px;margin-top:18px}
+button{border:0;border-radius:10px;padding:13px 16px;background:#17466e;color:white;font-size:16px;cursor:pointer;text-align:left}
+button:hover{background:#21618f}
+button:disabled{opacity:.55;cursor:not-allowed}
+.hints{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.hints button{background:#573c18;font-size:14px}
+.feedback{margin-top:18px;padding:15px;border-radius:12px;line-height:1.6}
+.good{background:#123f2a;border:1px solid #2c8d60}
+.bad{background:#4a1e25;border:1px solid #a84c5a}
+.code{font-size:28px;color:#ffbd66;font-weight:bold}
+.progress{height:10px;background:#14283d;border-radius:20px;overflow:hidden;margin-top:14px}
+.bar{height:100%;width:33%;background:#ff9f43;transition:.3s}
+.center{text-align:center}
+.final{font-size:42px;color:#ff9f43;letter-spacing:8px;font-weight:bold}
+.small{color:#a9bfd3;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🧩 PCB Layout Mission Escape</h1>
+<div class="subtitle">ภารกิจฝึกคิดจาก Component Placement → Manual Routing → DRC</div>
+<div class="status">
+<div class="badge">🎯 Unit 5: PCB Layout Design</div>
+<div class="badge">📈 3 Levels</div>
+<div class="badge">🔐 Final Code</div>
+<div class="badge">💡 Hint System</div>
+</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+</header>
+
+<div id="game" class="card">
+<div class="level" id="level"></div>
+<h2 id="title"></h2>
+<div class="challenge" id="challenge"></div>
+<div class="options" id="options"></div>
+<div class="hints">
+<button onclick="hint(1)">💡 Hint 1</button>
+<button onclick="hint(2)">💡 Hint 2</button>
+</div>
+<div id="hintBox"></div>
+<div id="feedback"></div>
+</div>
+
+<div id="final" class="card hidden center">
+<h2>🎉 Mission Complete!</h2>
+<p>คุณผ่านทั้ง 3 Levels และรวบรวม Code ได้ครบ</p>
+<div class="final" id="password"></div>
+<p id="finalText"></p>
+<button onclick="location.reload()">🔄 เล่นอีกครั้ง</button>
+</div>
+</div>
+
+<script>
+const levels=[
+{
+title:"Level 1 — Component Placement",
+challenge:"เลือกการจัดวางอุปกรณ์ที่เหมาะสมที่สุด เพื่อให้การเดิน Trace ทำได้ง่ายและเป็นระบบ",
+options:[
+"วางอุปกรณ์ที่เชื่อมต่อกันให้กระจายออกจากกันมากที่สุด",
+"จัดอุปกรณ์ที่เชื่อมต่อกันให้อยู่ในตำแหน่งเหมาะสม และแบ่งกลุ่มอุปกรณ์ตามหน้าที่",
+"วางอุปกรณ์โดยไม่สนใจทิศทางและพื้นที่สำหรับเดิน Trace",
+"วางอุปกรณ์ทั้งหมดไว้ตรงกลาง PCB โดยไม่พิจารณาความสัมพันธ์"
+],
+correct:1,code:"P",hints:[
+"พิจารณาความสัมพันธ์ของอุปกรณ์และความสะดวกในการ Routing",
+"อุปกรณ์ที่เชื่อมต่อกันควรอยู่ในตำแหน่งที่เดินสายได้ง่าย และควรแบ่งกลุ่ม เช่น Input / ประมวลผล / Output"
+],
+feedback:"หลักการ Placement ที่เหมาะสมช่วยให้ Routing ง่าย ลดความยาวและความซับซ้อนของลายวงจร"
+},
+{
+title:"Level 2 — Manual Routing",
+challenge:"หลังวางอุปกรณ์แล้ว พบว่าเส้นทางบางส่วนยาวและตัดกันหลายจุด ควรปรับการเดิน Trace อย่างไร",
+options:[
+"เดิน Trace ให้ยาวขึ้นเพื่อให้ทุกเส้นมีรูปแบบเหมือนกัน",
+"เดิน Trace โดยไม่สนใจตำแหน่ง Component",
+"วางแผนเส้นทางใหม่ เลือกเส้นทางที่สั้นและเป็นระบบ และหลีกเลี่ยง Trace ตัดกัน",
+"เพิ่ม Trace ใหม่ทับเส้นทางเดิม"
+],
+correct:2,code:"R",hints:[
+"Manual Routing ต้องวางแผนเส้นทางก่อนเดินสาย",
+"พิจารณาความยาว ความเป็นระเบียบ และการหลีกเลี่ยง Trace ตัดกัน"
+],
+feedback:"Manual Routing ที่ดีต้องวางแผนเส้นทาง ควบคุมความเป็นระเบียบ และคำนึงถึง Design Rules และ Clearance"
+},
+{
+title:"Level 3 — DRC & Clearance",
+challenge:"ตรวจสอบ Layout แล้วพบว่า Trace สองเส้นอยู่ใกล้กันเกินข้อกำหนด ทำให้ DRC ไม่ผ่าน ควรทำอย่างไร",
+options:[
+"ละเลย DRC เพราะ Trace ยังมองเห็นเป็นเส้นแยกกัน",
+"ปรับตำแหน่งหรือเส้นทาง Trace ให้มี Clearance ตาม Design Rules แล้วตรวจ DRC อีกครั้ง",
+"เพิ่มอุปกรณ์เข้าไปใกล้ Trace เพื่อปิดพื้นที่ว่าง",
+"ลด Clearance ให้ต่ำที่สุดโดยไม่ตรวจสอบข้อกำหนด"
+],
+correct:1,code:"C",hints:[
+"Clearance คือระยะห่างระหว่างส่วนที่นำไฟฟ้าหรือส่วนต่าง ๆ ของ PCB",
+"เมื่อ DRC ไม่ผ่าน ต้องปรับ Layout ให้สอดคล้องกับ Design Rules และตรวจสอบใหม่"
+],
+feedback:"Clearance ต้องเป็นไปตามข้อกำหนดของงานและ CAD หากน้อยเกินไปอาจทำให้ DRC ไม่ผ่านและเสี่ยงต่อการลัดวงจร"
+}
+];
+let current=0,codes=[],score=100,answered=false;
+function render(){
+answered=false;
+const l=levels[current];
+document.getElementById("level").textContent=`LEVEL ${current+1} / 3`;
+document.getElementById("title").textContent=l.title;
+document.getElementById("challenge").textContent=l.challenge;
+document.getElementById("options").innerHTML=l.options.map((x,i)=>`<button onclick="choose(${i})">${String.fromCharCode(65+i)}. ${x}</button>`).join("");
+document.getElementById("hintBox").innerHTML="";
+document.getElementById("feedback").innerHTML="";
+document.getElementById("feedback").className="";
+document.getElementById("bar").style.width=((current+1)/3*100)+"%";
+}
+function hint(n){
+const l=levels[current];
+const box=document.getElementById("hintBox");
+box.innerHTML=`<div class="feedback" style="background:#332711;border:1px solid #805f27">💡 ${l.hints[n-1]}</div>`;
+score=Math.max(0,score-(n===1?2:5));
+}
+function choose(i){
+if(answered)return;
+answered=true;
+const l=levels[current];
+document.querySelectorAll("#options button").forEach(b=>b.disabled=true);
+const fb=document.getElementById("feedback");
+if(i===l.correct){
+codes.push(l.code);
+score+=20;
+fb.className="feedback good";
+fb.innerHTML=`<strong>✅ ถูกต้อง!</strong><br>${l.feedback}<br><br>🔑 Key / Code: <span class="code">${l.code}</span>`;
+setTimeout(()=>{
+current++;
+if(current<3)render(); else finish();
+},1200);
+}else{
+fb.className="feedback bad";
+fb.innerHTML=`<strong>❌ ยังไม่ถูกต้อง</strong><br>${l.feedback}<br><br>ลองอ่าน Evidence และใช้ Hint แล้วตัดสินใจใหม่`;
+setTimeout(()=>{answered=false;document.querySelectorAll("#options button").forEach(b=>b.disabled=false)},900);
+}
+}
+function finish(){
+document.getElementById("game").classList.add("hidden");
+document.getElementById("final").classList.remove("hidden");
+document.getElementById("password").textContent=codes.join("");
+document.getElementById("finalText").innerHTML=`Final Mission: ใช้ความรู้จากทั้ง 3 Levels ตรวจสอบ PCB Layout ตั้งแต่ Placement → Routing → DRC/ Clearence ก่อนเข้าสู่ขั้นตอนการผลิต`;
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB Layout Simulation Decision</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#071426;color:#eef6ff}
+.container{max-width:1150px;margin:auto;padding:24px}
+header,.panel{background:#0b1c30;border:1px solid #274967;border-radius:18px;padding:20px}
+header{margin-bottom:18px;background:linear-gradient(135deg,#0d2745,#102f50)}
+h1{margin:0 0 8px;color:#ff9f43}
+.subtitle{color:#b8cde0}
+.grid{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.stat{background:#102940;border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;font-size:22px;color:#ffbd66;margin-top:5px}
+.action{width:100%;margin-top:10px;background:#17466e;border:0;border-radius:10px;color:#fff;padding:13px;text-align:left;cursor:pointer}
+.action:hover{background:#21618f}
+.action:disabled{opacity:.45;cursor:not-allowed}
+.evidence,.log{background:#0f2942;border:1px solid #284f70;border-radius:10px;padding:10px;margin-top:8px}
+.feedback{padding:14px;border-radius:12px;margin-top:14px;background:#173754;line-height:1.6}
+.good{background:#123f2a;border:1px solid #2c8d60}
+.warn{background:#4a3417;border:1px solid #936b27}
+.danger{background:#4a1e25;border:1px solid #a84c5a}
+.hidden{display:none}
+.center{text-align:center}
+.final{font-size:32px;color:#ff9f43;font-weight:bold}
+.small{font-size:14px;color:#a9bfd3}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🧪 PCB Layout Simulation Decision</h1>
+<div class="subtitle">บทบาท: PCB Layout Designer — วิเคราะห์ปัญหาและเลือก Action ภายใต้ข้อจำกัด</div>
+<div class="stats">
+<div class="stat">Turn<b id="turn">0 / 6</b></div>
+<div class="stat">Budget<b id="budget">100</b></div>
+<div class="stat">Routing Quality<b id="quality">50</b></div>
+<div class="stat">DRC Errors<b id="drc">4</b></div>
+</div>
+</header>
+
+<div id="game" class="grid">
+<section class="panel">
+<h2>🎯 Mission</h2>
+<p>คุณได้รับ PCB Layout ที่ยังมีปัญหา ต้องตรวจสอบ Evidence และเลือก Action เพื่อปรับ Placement / Routing / Clearance ให้เหมาะสม แล้วทำให้ DRC ผ่านภายใต้ 6 Turns และ Budget 100 คะแนน</p>
+<h3>ทรัพยากร</h3>
+<p class="small">ทุก Action มี Cost และใช้ Turn ต่างกัน คุณต้องวางแผนก่อนเลือก</p>
+<div id="actions"></div>
+</section>
+
+<section class="panel">
+<h2>🔎 Evidence ที่พบ</h2>
+<div id="evidence"><div class="evidence">Initial Evidence: Trace บางเส้นยาวและตัดกันหลายจุด</div></div>
+<div id="feedback" class="feedback">เลือก Action เพื่อรวบรวม Evidence เพิ่มเติม</div>
+<h2>📋 Event Log</h2>
+<div id="log"><div class="small">ยังไม่มีการดำเนินการ</div></div>
+</section>
+</div>
+
+<div id="final" class="panel hidden center">
+<h2>🏁 Simulation Complete</h2>
+<div class="final" id="result"></div>
+<p id="summary"></p>
+<button class="action" onclick="location.reload()">🔄 เริ่ม Simulation ใหม่</button>
+</div>
+</div>
+
+<script>
+const state={turn:0,budget:100,quality:50,drc:4,ended:false,evidence:[],history:[]};
+
+const actions={
+placement:{
+name:"ปรับ Component Placement",cost:15,turn:1,
+evidence:"อุปกรณ์ที่เชื่อมต่อกันถูกจัดให้อยู่ในตำแหน่งที่เดินสายได้ง่ายขึ้น",
+apply(){state.quality+=15;state.drc=Math.max(0,state.drc-1)}
+},
+routing:{
+name:"ทำ Manual Routing ใหม่",cost:20,turn:2,
+evidence:"เส้นทาง Trace สั้นและเป็นระบบมากขึ้น และลดจุดที่ Trace ตัดกัน",
+apply(){state.quality+=25;state.drc=Math.max(0,state.drc-2)}
+},
+clearance:{
+name:"ปรับ Clearance ตาม Design Rules",cost:10,turn:1,
+evidence:"ระยะห่างระหว่าง Trace ถูกปรับให้สอดคล้องกับ Design Rules",
+apply(){state.drc=Math.max(0,state.drc-2);state.quality+=10}
+},
+drc:{
+name:"ตรวจสอบ DRC",cost:5,turn:1,
+evidence:"พบจุดที่ต้องแก้ไขด้าน Trace / Clearance และต้องปรับ Layout ต่อ",
+apply(){state.quality+=0}
+},
+verify:{
+name:"ตรวจสอบ Layout ก่อนผลิต",cost:10,turn:1,
+evidence:"ตรวจสอบ Placement, Routing, Clearance และ DRC ก่อนเข้าสู่ขั้นตอนผลิต",
+apply(){state.quality+=10}
+}
+};
+
+function renderActions(){
+document.getElementById("actions").innerHTML=Object.entries(actions).map(([id,a])=>`
+<button class="action" id="a-${id}" onclick="act('${id}')">
+<strong>${a.name}</strong><br>
+<span class="small">Cost: ${a.cost} | Time: ${a.turn} Turn</span>
+</button>`).join("");
+}
+function update(){
+document.getElementById("turn").textContent=`${state.turn} / 6`;
+document.getElementById("budget").textContent=state.budget;
+document.getElementById("quality").textContent=Math.min(100,state.quality);
+document.getElementById("drc").textContent=state.drc;
+}
+function act(id){
+if(state.ended)return;
+const a=actions[id];
+if(state.turn+a.turn>6){show("Action นี้ใช้เวลามากเกินกว่าจำนวน Turn ที่เหลือ","warn");return}
+if(state.budget<a.cost){show("Budget ไม่เพียงพอสำหรับ Action นี้","warn");return}
+
+state.budget-=a.cost;
+state.turn+=a.turn;
+a.apply();
+state.evidence.push(a.evidence);
+state.history.push({name:a.name,cost:a.cost,turn:a.turn,evidence:a.evidence});
+
+document.querySelector(`#a-${id}`).disabled=true;
+document.getElementById("evidence").innerHTML=state.evidence.map((e,i)=>`<div class="evidence"><strong>Evidence ${i+1}</strong><br>${e}</div>`).join("");
+document.getElementById("log").innerHTML=state.history.map((h,i)=>`<div class="log"><strong>Action ${i+1}: ${h.name}</strong><br>Cost: ${h.cost} | Turn: +${h.turn}<br>Evidence: ${h.evidence}</div>`).join("");
+show(`<strong>${a.name}</strong><br>ได้รับ Evidence ใหม่: ${a.evidence}<br><br>เลือก Action ถัดไปโดยพิจารณา Cost, Turn และผลกระทบต่อ Layout`, "info");
+update();
+checkWin();
+}
+function show(msg,type){
+const f=document.getElementById("feedback");
+f.className="feedback "+(type||"");
+f.innerHTML=msg;
+}
+function checkWin(){
+if(state.drc===0 && state.quality>=80 && state.turn<=6){
+finish(true);
+}else if(state.turn===6){
+finish(false);
+}
+}
+function finish(win){
+state.ended=true;
+document.getElementById("game").classList.add("hidden");
+document.getElementById("final").classList.remove("hidden");
+if(win){
+document.getElementById("result").textContent="MISSION SUCCESS";
+document.getElementById("summary").textContent=`คุณสามารถลด DRC Errors เหลือ 0 และทำให้คุณภาพ Layout ถึงเกณฑ์ภายใน ${state.turn} Turns และใช้งบ ${100-state.budget} คะแนน`;
+}else{
+document.getElementById("result").textContent="RETRY / INEFFICIENT PATH";
+document.getElementById("summary").textContent=`ยังไม่บรรลุเงื่อนไขภารกิจ: DRC Errors = ${state.drc}, Routing Quality = ${state.quality}. ให้ทบทวน Evidence และวางแผน Action ใหม่`;
+}
+}
+renderActions();update();
+</script>
+</body>
+</html>

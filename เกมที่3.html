@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>WEBVERSE: BUG MASTER — DEV KNIGHT RESCUE</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    background: #070b12;
+    color: #eaf2ff;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 25px;
+}
+
+/* HEADER */
+header {
+    background: linear-gradient(135deg, #0d1724, #111f31);
+    border: 1px solid #294158;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 35px rgba(0,0,0,.5);
+}
+
+.logo {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.logo span {
+    color: #62d8ff;
+}
+
+.subtitle {
+    margin-top: 6px;
+    color: #91a8bf;
+}
+
+/* STATUS */
+.status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.status {
+    background: #0b121c;
+    border: 1px solid #30465d;
+    padding: 9px 14px;
+    border-radius: 10px;
+}
+
+.turn {
+    color: #ffd66b;
+    font-weight: bold;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.card {
+    background: #0d1520;
+    border: 1px solid #26384d;
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #7de3ff;
+    font-size: 18px;
+}
+
+/* MISSION */
+.mission {
+    line-height: 1.8;
+}
+
+/* EVIDENCE */
+.evidence {
+    background: #111e2c;
+    border-left: 3px solid #62d8ff;
+    padding: 10px 13px;
+    margin: 8px 0;
+    border-radius: 7px;
+}
+
+/* DECISION */
+.scene {
+    margin-top: 16px;
+}
+
+.scenario {
+    line-height: 1.7;
+    color: #cbd8e5;
+}
+
+.decision {
+    width: 100%;
+    text-align: left;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 11px;
+    border: 1px solid #30465d;
+    background: #101b29;
+    color: #eaf2ff;
+    cursor: pointer;
+    font-size: 15px;
+    transition: .2s;
+}
+
+.decision:hover {
+    border-color: #62d8ff;
+    background: #132437;
+    transform: translateY(-2px);
+}
+
+.decision:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* FEEDBACK */
+.consequence,
+.feedback {
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    line-height: 1.6;
+}
+
+.consequence {
+    background: #211c12;
+    border: 1px solid #62502b;
+}
+
+.feedback {
+    background: #10243a;
+    border: 1px solid #285577;
+}
+
+.hidden {
+    display: none;
+}
+
+/* HISTORY */
+.history-item {
+    padding: 11px 0;
+    border-bottom: 1px solid #223144;
+    line-height: 1.6;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+/* RESULT */
+.result {
+    margin-top: 18px;
+    padding: 24px;
+    border-radius: 16px;
+    background: #101b29;
+    border: 1px solid #38516a;
+}
+
+.result.success {
+    border-color: #4aa978;
+}
+
+.result.inefficient {
+    border-color: #c08a48;
+}
+
+.result.retry {
+    border-color: #8060c0;
+}
+
+.result h2 {
+    font-size: 24px;
+}
+
+.reflection {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #151d29;
+    border: 1px dashed #536b84;
+    line-height: 1.7;
+}
+
+.restart {
+    margin-top: 18px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #62d8ff;
+    color: #061018;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.restart:hover {
+    opacity: .85;
+}
+
+/* MOBILE */
+@media(max-width:750px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 12px;
+    }
+
+    .logo {
+        font-size: 23px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+
+    <div class="logo">
+        WEBVERSE: <span>BUG MASTER</span>
+    </div>
+
+    <div class="subtitle">
+        DEV KNIGHT RESCUE
+    </div>
+
+    <div class="status-bar">
+
+        <div class="status">
+            Role:
+            <strong>Dev Knight</strong>
+        </div>
+
+        <div class="status">
+            Mission:
+            <strong>Restore WebVerse</strong>
+        </div>
+
+        <div class="status">
+            Turn:
+            <span class="turn" id="turn">
+                1 / 5
+            </span>
+        </div>
+
+        <div class="status">
+            Status:
+            <span id="status">
+                ACTIVE
+            </span>
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- MISSION + EVIDENCE -->
+
+<div class="grid">
+
+<section class="card mission">
+
+<h2>MISSION</h2>
+
+<p>
+โลกไซเบอร์ <strong>“WebVerse”</strong>
+ถูกไวรัส <strong>Bug Master</strong> ก่อกวน
+ส่งผลให้โครงสร้างเมืองพังทลาย
+สีสันหายไปกลายเป็นสีขาวดำ
+และกลไกอัตโนมัติต่าง ๆ หยุดทำงาน
+</p>
+
+<p>
+ผู้เล่นรับบทเป็น <strong>“Dev Knight”</strong>
+มีภารกิจเดินทางไปยังมิติต่าง ๆ
+และแก้ปริศนาจากใบความรู้
+เพื่อคืนสภาพเมืองให้สมบูรณ์
+</p>
+
+</section>
+
+
+<section class="card">
+
+<h2>CURRENT EVIDENCE</h2>
+
+<div id="evidence"></div>
+
+</section>
+
+</div>
+
+
+<!-- DECISION -->
+
+<section class="card scene">
+
+<h2 id="decisionTitle">
+DECISION 1 — วิเคราะห์สถานการณ์
+</h2>
+
+<p id="scenarioText" class="scenario"></p>
+
+<div id="choices"></div>
+
+<div id="consequence"
+     class="consequence hidden">
+</div>
+
+<div id="feedback"
+     class="feedback hidden">
+</div>
+
+</section>
+
+
+<!-- HISTORY -->
+
+<section class="card scene">
+
+<h2>DECISION HISTORY</h2>
+
+<div id="history">
+
+<span style="color:#71869b;">
+ยังไม่มีการตัดสินใจ
+</span>
+
+</div>
+
+</section>
+
+
+<!-- FINAL RESULT -->
+
+<div id="result"
+     class="result hidden">
+</div>
+
+</div>
+
+
+<script>
+
+/* ==========================================
+   GAME STATE
+========================================== */
+
+const state = {
+
+    turn: 1,
+
+    node: 1,
+
+    history: [],
+
+    ended: false,
+
+    finalOutcome: null
+
+};
+
+
+/* ==========================================
+   DECISION TREE
+   LOGIC ตามแบบจำลองที่กำหนด
+========================================== */
+
+const tree = {
+
+    /* =========================
+       DECISION 1
+    ========================= */
+
+    1: {
+
+        title:
+        "DECISION 1 — วิเคราะห์สถานการณ์",
+
+        text:
+        "Dev Knight พบว่า WebVerse ได้รับความเสียหายและระบบต่าง ๆ หยุดทำงาน ผู้เล่นต้องเลือกแนวทางในการเริ่มภารกิจ",
+
+        evidence: [
+
+            "เมืองพังทลาย",
+
+            "สีสันหายไปเป็นสีขาวดำ",
+
+            "ระบบอัตโนมัติหยุดทำงาน",
+
+            "พบไวรัส Bug Master"
+
+        ],
+
+        choices: [
+
+            {
+
+                label:
+                "A — ตรวจสอบข้อมูลและหลักฐานจากสถานการณ์",
+
+                consequence:
+                "Dev Knight ได้ข้อมูลสำหรับใช้วิเคราะห์ปัญหา",
+
+                feedback:
+                "เป็นการเริ่มต้นจากข้อมูลที่มีอยู่ก่อนตัดสินใจแก้ไขปัญหา",
+
+                next: 2,
+
+                type: "success"
+
+            },
+
+            {
+
+                label:
+                "B — เดินทางต่อโดยไม่วิเคราะห์ข้อมูล",
+
+                consequence:
+                "Dev Knight มีข้อมูลไม่เพียงพอสำหรับการแก้ปริศนา",
+
+                feedback:
+                "ควรวิเคราะห์ข้อมูลและหลักฐานที่พบก่อนดำเนินการต่อ",
+
+                next: 1,
+
+                type: "retry"
+
+            }
+
+        ]
+
+    },
+
+
+    /* =========================
+       DECISION 2
+    ========================= */
+
+    2: {
+
+        title:
+        "DECISION 2 — ใช้ความรู้จากใบความรู้",
+
+        text:
+        "Dev Knight พบปริศนาในมิติหนึ่งของ WebVerse และมีใบความรู้เป็นแหล่งข้อมูลสำหรับช่วยแก้ปัญหา",
+
+        evidence: [
+
+            "ใบความรู้เป็นแหล่งข้อมูลสำหรับแก้ปริศนา",
+
+            "มีข้อมูลจากสถานการณ์ก่อนหน้า",
+
+            "เป้าหมายคือฟื้นฟู WebVerse"
+
+        ],
+
+        choices: [
+
+            {
+
+                label:
+                "A — ใช้ข้อมูลจากใบความรู้ประกอบการตัดสินใจ",
+
+                consequence:
+                "สามารถนำความรู้ที่เกี่ยวข้องมาใช้ในการแก้ปริศนา",
+
+                feedback:
+                "การใช้ข้อมูลจากใบความรู้ช่วยให้การตัดสินใจมีหลักฐานรองรับ",
+
+                next: 3,
+
+                type: "success"
+
+            },
+
+            {
+
+                label:
+                "B — เลือกวิธีแก้โดยไม่อ้างอิงใบความรู้",
+
+                consequence:
+                "แนวทางที่เลือกอาจไม่สอดคล้องกับข้อมูลที่มี",
+
+                feedback:
+                "ควรกลับไปตรวจสอบใบความรู้และใช้ข้อมูลที่เกี่ยวข้องก่อนเลือกแนวทาง",
+
+                next: 2,
+
+                type: "retry"
+
+            }
+
+        ]
+
+    },
+
+
+    /* =========================
+       DECISION 3
+    ========================= */
+
+    3: {
+
+        title:
+        "DECISION 3 — ฟื้นฟู WebVerse",
+
+        text:
+        "Dev Knight มีข้อมูลจากหลักฐานและใบความรู้แล้ว ต้องเลือกแนวทางดำเนินการเพื่อฟื้นฟู WebVerse",
+
+        evidence: [
+
+            "ข้อมูลจากสถานการณ์",
+
+            "หลักฐานที่พบ",
+
+            "ข้อมูลจากใบความรู้"
+
+        ],
+
+        choices: [
+
+            {
+
+                label:
+                "A — เลือกแนวทางที่สอดคล้องกับข้อมูลและหลักฐาน",
+
+                consequence:
+                "สามารถดำเนินภารกิจเพื่อฟื้นฟู WebVerse ได้",
+
+                feedback:
+                "การตัดสินใจสอดคล้องกับข้อมูลที่มีอยู่และเป้าหมายของภารกิจ",
+
+                next: "SUCCESS",
+
+                type: "success"
+
+            },
+
+            {
+
+                label:
+                "B — เลือกแนวทางที่ไม่สอดคล้องกับข้อมูล",
+
+                consequence:
+                "การฟื้นฟู WebVerse ไม่เป็นไปตามเป้าหมาย และต้องเสียเวลาในการแก้ไข",
+
+                feedback:
+                "ควรวิเคราะห์ข้อมูลอีกครั้งก่อนดำเนินการต่อ",
+
+                next: "INEFFICIENT",
+
+                type: "inefficient"
+
+            }
+
+        ]
+
+    }
+
+};
+
+
+/* ==========================================
+   RENDER GAME
+========================================== */
+
+function render() {
+
+    if (state.ended) return;
+
+    const node = tree[state.node];
+
+    document.getElementById("turn").textContent =
+        state.turn + " / 5";
+
+    document.getElementById("decisionTitle").textContent =
+        node.title;
+
+    document.getElementById("scenarioText").textContent =
+        node.text;
+
+
+    /* Evidence */
+
+    document.getElementById("evidence").innerHTML =
+        node.evidence
+        .map(item =>
+            `<div class="evidence">
+                • ${item}
+            </div>`
+        )
+        .join("");
+
+
+    /* Choices */
+
+    document.getElementById("choices").innerHTML =
+        node.choices
+        .map((choice, index) =>
+
+            `<button
+                class="decision"
+                onclick="choose(${index})">
+
+                ${choice.label}
+
+            </button>`
+
+        )
+        .join("");
+
+
+    document.getElementById("consequence")
+        .className =
+        "consequence hidden";
+
+    document.getElementById("feedback")
+        .className =
+        "feedback hidden";
+
+
+    document.getElementById("status")
+        .textContent =
+        "ACTIVE";
+
+
+    renderHistory();
+
+}
+
+
+/* ==========================================
+   PLAYER DECISION
+========================================== */
+
+function choose(index) {
+
+    if (state.ended) return;
+
+    const node =
+        tree[state.node];
+
+    const choice =
+        node.choices[index];
+
+
+    /* Save History */
+
+    state.history.push({
+
+        turn: state.turn,
+
+        decision: node.title,
+
+        option: choice.label,
+
+        consequence:
+            choice.consequence,
+
+        feedback:
+            choice.feedback
+
+    });
+
+
+    /* Disable buttons */
+
+    document
+        .querySelectorAll(".decision")
+        .forEach(button => {
+
+            button.disabled = true;
+
+        });
+
+
+    /* Consequence */
+
+    const consequence =
+        document.getElementById("consequence");
+
+    consequence.innerHTML =
+        "<strong>Consequence:</strong> "
+        + choice.consequence;
+
+    consequence.className =
+        "consequence";
+
+
+    /* Feedback */
+
+    const feedback =
+        document.getElementById("feedback");
+
+    feedback.innerHTML =
+        "<strong>Feedback:</strong> "
+        + choice.feedback;
+
+    feedback.className =
+        "feedback";
+
+
+    renderHistory();
+
+
+    /* SUCCESS */
+
+    if (choice.next === "SUCCESS") {
+
+        finish("SUCCESS");
+
+        return;
+
+    }
+
+
+    /* INEFFICIENT */
+
+    if (choice.next === "INEFFICIENT") {
+
+        finish("INEFFICIENT PATH");
+
+        return;
+
+    }
+
+
+    /* TURN LIMIT */
+
+    if (state.turn >= 5) {
+
+        finish(
+            "RETRY PATH — TURN LIMIT REACHED"
+        );
+
+        return;
+
+    }
+
+
+    /* Next Turn */
+
+    state.turn++;
+
+    state.node = choice.next;
+
+
+    setTimeout(() => {
+
+        render();
+
+    }, 700);
+
+}
+
+
+/* ==========================================
+   DECISION HISTORY
+========================================== */
+
+function renderHistory() {
+
+    const history =
+        document.getElementById("history");
+
+
+    if (state.history.length === 0) {
+
+        history.innerHTML =
+            `<span style="color:#71869b;">
+                ยังไม่มีการตัดสินใจ
+            </span>`;
+
+        return;
+
+    }
+
+
+    history.innerHTML =
+        state.history
+        .map(item =>
+
+            `<div class="history-item">
+
+                <strong>
+                    Turn ${item.turn}
+                </strong>
+
+                — ${item.decision}
+
+                <br>
+
+                <span>
+                    เลือก:
+                    ${item.option}
+                </span>
+
+            </div>`
+
+        )
+        .join("");
+
+}
+
+
+/* ==========================================
+   FINISH GAME
+========================================== */
+
+function finish(outcome) {
+
+    state.ended = true;
+
+    state.finalOutcome = outcome;
+
+
+    document.getElementById("status")
+        .textContent =
+        "MISSION COMPLETE";
+
+
+    document
+        .querySelectorAll(".decision")
+        .forEach(button => {
+
+            button.disabled = true;
+
+        });
+
+
+    let title = "";
+
+    let description = "";
+
+    let resultClass = "";
+
+
+    if (outcome === "SUCCESS") {
+
+        title =
+            "SUCCESS — WEBVERSE RESTORED";
+
+        description =
+            "Dev Knight เลือกเส้นทางที่สอดคล้องกับข้อมูลและหลักฐาน จึงสามารถดำเนินภารกิจเพื่อฟื้นฟู WebVerse ได้";
+
+        resultClass =
+            "success";
+
+    }
+
+    else if (
+        outcome === "INEFFICIENT PATH"
+    ) {
+
+        title =
+            "INEFFICIENT PATH";
+
+        description =
+            "Dev Knight เลือกแนวทางที่ไม่สอดคล้องกับข้อมูล ทำให้การฟื้นฟู WebVerse ไม่เป็นไปตามเป้าหมายและต้องเสียเวลาในการแก้ไข";
+
+        resultClass =
+            "inefficient";
+
+    }
+
+    else {
+
+        title =
+            "RETRY PATH — TURN LIMIT REACHED";
+
+        description =
+            "Dev Knight ต้องทบทวนข้อมูลและใบความรู้ แต่ภารกิจสิ้นสุดเมื่อครบ 5 Turns";
+
+        resultClass =
+            "retry";
+
+    }
+
+
+    /* Selected Path */
+
+    const route =
+        state.history
+        .map(item =>
+
+            `Turn ${item.turn}: ${item.option}`
+
+        )
+        .join(" → ");
+
+
+    const result =
+        document.getElementById("result");
+
+
+    result.className =
+        "result " + resultClass;
+
+
+    result.innerHTML = `
+
+        <h2>
+            ${title}
+        </h2>
+
+        <p>
+
+            <strong>
+                เส้นทางที่ผู้เล่นเลือก:
+            </strong>
+
+            <br>
+
+            ${route}
+
+        </p>
+
+
+        <p>
+
+            <strong>
+                จำนวน Turns:
+            </strong>
+
+            ${state.history.length}
+
+        </p>
+
+
+        <p>
+
+            <strong>
+                Final Outcome:
+            </strong>
+
+            <br>
+
+            ${description}
+
+        </p>
+
+
+        <div class="reflection">
+
+            <strong>
+                Reflection Question
+            </strong>
+
+            <br><br>
+
+            จากเส้นทางที่คุณเลือก
+            คุณคิดว่าการใช้ข้อมูลจากหลักฐาน
+            และใบความรู้มีผลต่อการตัดสินใจ
+            ของ Dev Knight อย่างไร?
+
+        </div>
+
+
+        <button
+            class="restart"
+            onclick="location.reload()">
+
+            เล่นใหม่
+
+        </button>
+
+    `;
+
+
+    result.classList.remove("hidden");
+
+
+    result.scrollIntoView({
+
+        behavior: "smooth"
+
+    });
+
+}
+
+
+/* ==========================================
+   START GAME
+========================================== */
+
+render();
+
+</script>
+
+</body>
+</html>

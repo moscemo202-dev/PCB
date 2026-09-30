@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB Layout Quiz Game</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:"Segoe UI",Tahoma,sans-serif;
+  background:linear-gradient(135deg,#160b22,#35104b,#111827);
+  min-height:100vh;color:#fff;display:flex;justify-content:center;align-items:center;padding:20px
+}
+.game{width:min(760px,100%);background:rgba(255,255,255,.08);backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:28px;box-shadow:0 20px 60px #0008}
+.header{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}
+.title{font-size:clamp(22px,5vw,32px);font-weight:800}
+.badge{background:#f59e0b;color:#171717;padding:8px 14px;border-radius:999px;font-weight:800}
+.progress-wrap{background:#ffffff20;border-radius:99px;height:12px;overflow:hidden;margin:12px 0 25px}
+.progress{height:100%;width:20%;background:linear-gradient(90deg,#f59e0b,#f97316);transition:.35s}
+.meta{display:flex;justify-content:space-between;color:#ddd;margin-bottom:10px}
+.question{font-size:clamp(20px,4vw,27px);line-height:1.5;font-weight:700;margin:15px 0 22px}
+.options{display:grid;gap:12px}
+.option{
+  border:2px solid #ffffff22;background:#ffffff0d;color:#fff;border-radius:15px;
+  padding:16px;text-align:left;font-size:17px;cursor:pointer;transition:.2s
+}
+.option:hover:not(:disabled){transform:translateY(-2px);background:#ffffff18;border-color:#f59e0b}
+.option:disabled{cursor:default}
+.correct{background:#15803d!important;border-color:#4ade80!important}
+.wrong{background:#b91c1c!important;border-color:#f87171!important}
+.feedback{display:none;margin-top:18px;padding:15px;border-radius:14px;font-weight:700}
+.feedback.show{display:block}
+.next{
+  display:none;width:100%;margin-top:15px;padding:15px;border:0;border-radius:14px;
+  background:#f59e0b;color:#171717;font-size:17px;font-weight:800;cursor:pointer
+}
+.next.show{display:block}
+.screen{text-align:center}
+.big-score{font-size:58px;font-weight:900;margin:10px 0}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.card{background:#ffffff0d;border-radius:16px;padding:15px}
+.card strong{display:block;font-size:25px}
+.retry{padding:14px 28px;border:0;border-radius:14px;background:#f59e0b;font-weight:900;font-size:17px;cursor:pointer}
+.small{color:#bbb;margin-top:18px}
+.hidden{display:none}
+@media(max-width:520px){.game{padding:20px}.summary{grid-template-columns:1fr}.option{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="game">
+  <div id="quiz">
+    <div class="header">
+      <div class="title">🎮 PCB Layout Quiz</div>
+      <div class="badge" id="bonus">Bonus +0</div>
+    </div>
+    <div class="meta"><span id="count">ข้อ 1 / 5</span><span>คะแนน: <b id="score">0</b></span></div>
+    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next" id="next">ข้อต่อไป →</button>
+  </div>
+
+  <div id="summary" class="screen hidden">
+    <div class="title">🏆 สรุปผลการเล่น</div>
+    <div class="big-score" id="finalScore">0</div>
+    <div id="resultText"></div>
+    <div class="summary">
+      <div class="card">ตอบถูก<strong id="correctCount">0</strong></div>
+      <div class="card">คะแนน<strong id="totalScore">0</strong></div>
+      <div class="card">โบนัส<strong id="totalBonus">0</strong></div>
+    </div>
+    <button class="retry" onclick="startGame()">🔄 เล่นอีกครั้ง</button>
+    <div class="small">รายวิชา เขียนแบบอิเล็กทรอนิกส์ด้วยคอมพิวเตอร์<br>รหัสวิชา 20105-2002 • หน่วยที่ 5</div>
+  </div>
+</div>
+
+<script>
+const questions = [
+ {
+  q:"Manual Routing คืออะไร",
+  a:["การตรวจสอบกฎการออกแบบ PCB","การเดินลายวงจรด้วยการกำหนดเส้นทางด้วยตนเอง","การกำหนดขนาดพื้นที่ PCB","การสร้าง Footprint ของอุปกรณ์"],
+  correct:1
+ },
+ {
+  q:"เพราะเหตุใดจึงต้องวางอุปกรณ์ก่อนเริ่ม Routing",
+  a:["เพื่อให้ลายวงจรมีสีสวยงาม","เพื่อเพิ่มจำนวนอุปกรณ์บน PCB","เพราะตำแหน่งของอุปกรณ์ส่งผลต่อความยาวและความซับซ้อนของลายวงจร","เพื่อไม่ต้องตรวจสอบ DRC"],
+  correct:2
+ },
+ {
+  q:"สมมติวงจรมี R1, R2, C1, IC1, LED1, Input Connector และ Output Connector หากต้องจัดวางอุปกรณ์ให้เหมาะสม ควรจัดวางอย่างไร",
+  a:["วางอุปกรณ์ทุกตัวรวมกันตรงกลาง PCB","วาง Input Connector ด้านรับสัญญาณ, IC1 บริเวณกึ่งกลาง, R1/R2/C1 ใกล้ IC1 และ LED1/Output Connector ด้านเอาต์พุต","วาง LED1 ไว้ด้านรับสัญญาณและ Input Connector ด้านเอาต์พุต","วางอุปกรณ์แบบสุ่มแล้วใช้ Auto Routing"],
+  correct:1
+ },
+ {
+  q:"หาก Trace A และ Trace B อยู่ใกล้กันเกินข้อกำหนดจนทำให้ตรวจสอบ Design Rules ไม่ผ่าน ควรวิเคราะห์ปัญหาอย่างไร",
+  a:["เพิ่มจำนวนอุปกรณ์บน PCB","พิจารณาว่า Clearance ไม่เพียงพอ แล้วปรับเส้นทางหรือระยะห่างให้สอดคล้องกับ Design Rules ของงาน","เปลี่ยนชื่ออุปกรณ์ทุกตัว","ไม่ต้องแก้ไข เพราะ Clearance ใช้เฉพาะตอนผลิต"],
+  correct:1
+ },
+ {
+  q:"ผู้เรียนออกแบบ PCB แล้วพบว่าอุปกรณ์หลายตัวอยู่ห่างจากกันมาก ทำให้ต้องเดิน Trace เป็นระยะทางยาวและเกิดการตัดกันหลายจุด ควรปรับปรุง Layout อย่างไร",
+  a:["เดิน Trace ให้ยาวขึ้นเพื่อให้ดูเป็นระเบียบ","เพิ่มอุปกรณ์เข้าไปในบริเวณที่ว่าง","ปรับ Component Placement โดยจัดอุปกรณ์ที่เชื่อมต่อกันให้อยู่ในตำแหน่งเหมาะสม แล้ววางแผนเส้นทาง Routing ใหม่","ละเว้นปัญหาและส่งงานทันที"],
+  correct:2
+ }
+];
+
+let index=0, score=0, correctCount=0, bonus=0, answered=false;
+
+function startGame(){
+ index=0;score=0;correctCount=0;bonus=0;answered=false;
+ document.getElementById("quiz").classList.remove("hidden");
+ document.getElementById("summary").classList.add("hidden");
+ render();
+}
+function render(){
+ answered=false;
+ const item=questions[index];
+ document.getElementById("count").textContent=`ข้อ ${index+1} / ${questions.length}`;
+ document.getElementById("score").textContent=score;
+ document.getElementById("bonus").textContent=`Bonus +${bonus}`;
+ document.getElementById("progress").style.width=((index+1)/questions.length*100)+"%";
+ document.getElementById("question").textContent=item.q;
+ const box=document.getElementById("options"); box.innerHTML="";
+ item.a.forEach((text,i)=>{
+   const b=document.createElement("button");
+   b.className="option"; b.textContent=`${String.fromCharCode(65+i)}. ${text}`;
+   b.onclick=()=>answer(i,b); box.appendChild(b);
+ });
+ const fb=document.getElementById("feedback");
+ fb.className="feedback"; fb.textContent="";
+ document.getElementById("next").className="next";
+ document.getElementById("next").textContent=index===questions.length-1?"ดูผลคะแนน 🏆":"ข้อต่อไป →";
+}
+function answer(choice,button){
+ if(answered)return; answered=true;
+ const item=questions[index];
+ document.querySelectorAll(".option").forEach((b,i)=>{
+   b.disabled=true;
+   if(i===item.correct)b.classList.add("correct");
+ });
+ const fb=document.getElementById("feedback");
+ if(choice===item.correct){
+   correctCount++; score+=20; bonus+=5;
+   button.classList.add("correct");
+   fb.textContent="✅ ถูกต้อง! ได้ 20 คะแนน + โบนัส 5 คะแนน";
+   fb.style.background="#166534";
+ }else{
+   button.classList.add("wrong");
+   fb.textContent=`❌ ยังไม่ถูกต้อง — เฉลยคือ ${String.fromCharCode(65+item.correct)}. ${item.a[item.correct]}`;
+   fb.style.background="#991b1b";
+ }
+ fb.classList.add("show");
+ document.getElementById("score").textContent=score;
+ document.getElementById("bonus").textContent=`Bonus +${bonus}`;
+ document.getElementById("next").classList.add("show");
+}
+document.getElementById("next").onclick=()=>{
+ if(!answered)return;
+ if(index<questions.length-1){index++;render()}else{showSummary()}
+};
+function showSummary(){
+ document.getElementById("quiz").classList.add("hidden");
+ document.getElementById("summary").classList.remove("hidden");
+ document.getElementById("finalScore").textContent=score+bonus;
+ document.getElementById("correctCount").textContent=`${correctCount} / ${questions.length}`;
+ document.getElementById("totalScore").textContent=score;
+ document.getElementById("totalBonus").textContent=bonus;
+ const pct=correctCount/questions.length*100;
+ document.getElementById("resultText").textContent=
+   pct===100?"🎉 ยอดเยี่ยม! ตอบถูกครบทุกข้อ":
+   pct>=60?"👏 ทำได้ดี! ลองเล่นอีกครั้งเพื่อเก็บคะแนนเพิ่ม":
+   "💪 ลองทบทวนเนื้อหาเรื่อง PCB Layout แล้วเล่นใหม่อีกครั้ง";
+}
+startGame();
+</script>
+</body>
+</html>
